@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+. "$HOME/bin/webmenu-utils"
+
+require_deps
+load_config
+
+command -v inotifywait >/dev/null 2>&1 || {
+    echo "inotifywait manquant (paquet inotify-tools)."
+    exit 1
+}
+
+echo "WebMenu daemon : surveillance de $WEBMENU_DB"
+while inotifywait -e close_write "$WEBMENU_DB"; do
+    "$HOME/bin/webmenu" sync
+done
+

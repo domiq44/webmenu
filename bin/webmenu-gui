@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+. "$HOME/bin/webmenu-utils"
+
+require_deps
+load_config
+
+action=$(zenity --list \
+    --title="WebMenu" \
+    --column="Action" \
+    "Ajouter" \
+    "Supprimer" \
+    "Lister" \
+    --height=250)
+
+[ -z "$action" ] && exit 0
+
+case "$action" in
+
+Ajouter)
+    name=$(zenity --entry --title="Nom du site" --text="Nom :")
+    [ -z "$name" ] && exit 0
+
+    url=$(zenity --entry --title="URL" --text="https://...")
+    [ -z "$url" ] && exit 0
+
+    browser=$(zenity --list \
+        --title="Navigateur" \
+        --column="Navigateur" \
+        "firefox-ssb" \
+        "firefox" \
+        "chromium" \
+        "chrome" \
+        "brave" \
+        "edge" \
+        "xdg-open" \
+        --height=300)
+
+    [ -z "$browser" ] && browser="$DEFAULT_BROWSER"
+
+    icon_choice=$(zenity --list \
+        --title="Icône" \
+        --column="Mode" \
+        "auto" \
+        "fichier..." \
+        --height=200)
+
+    if [ "$icon_choice" = "fichier..." ]; then
+        icon_path=$(zenity --file-selection --title="Choisir une icône")
+        [ -z "$icon_path" ] && icon_path="auto"
+    else
+        icon_path="auto"
+    fi
+
+    tags=$(zenity --entry --title="Tags" --text="Tags (séparés par des virgules) :" || echo "")
+
+    add_entry_json "$name" "$url" "$browser" "$icon_path" "Web" "$tags"
+    generate_desktop_file "$name" "$url" "$browser" "$icon_path" "Web"
+    refresh_cinnamon
+    ;;
+
+Supprimer)
+    names=$(get_entries | jq -r '.name')
+
+    if [ -z "$names" ]; then
+        zenity --info --title="WebMenu" --text="Aucun site à supprimer."
+        exit 0
+    fi
+
+    name=$(echo "$names" | zenity --list \
+        --title="Supprimer un site" \
+        --column="Sites" \
+        --height=300)
+
+    [ -z "$name" ] && exit 0
+
+    remove_entry_json "$name"
+    remove_desktop_file "$name"
+    refresh_cinnamon
+    ;;
+
+Lister)
+    get_entries \
+        | jq -r '.name + " -> " + .url' \
+        | zenity --text-info --title="Liste des sites" --width=600 --height=400
+    ;;
+
+esac
+

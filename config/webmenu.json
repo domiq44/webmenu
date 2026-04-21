@@ -1,0 +1,124 @@
+{
+  "entries": [
+    {
+      "name": "Xavki - Apprenons ensemble",
+      "url": "https://www.youtube.com/@xavki",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "The Gramps Project (Discourse Forum & Mailing List)",
+      "url": "https://gramps.discourse.group/",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "ScienceEtonnante",
+      "url": "https://www.youtube.com/@ScienceEtonnante",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "ScienceEtonnante2",
+      "url": "https://www.youtube.com/@ScienceEtonnante2",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Professeur Mohamed YOUSSFI",
+      "url": "https://www.youtube.com/@mohamedYoussfi",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Piper Voice Samples",
+      "url": "https://rhasspy.github.io/piper-samples/#fr_FR-siwis-medium",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Philippe Renard - JupyterLab",
+      "url": "https://www.youtube.com/@philipperenard7541",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Mickaël Launay (Micmaths)",
+      "url": "https://www.youtube.com/@Micmaths",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Horizon Retraite",
+      "url": "https://www.youtube.com/@Horizonretraite",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Gramps - Forums Geneanet",
+      "url": "https://www.geneanet.org/forum/viewforum.php?f=55945",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Grafikart.fr",
+      "url": "https://www.youtube.com/@grafikart",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Forum Linux",
+      "url": "https://www.developpez.net/forums/f327/general-developpement/programmation-systeme/linux/",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Deus Ex Silicium",
+      "url": "https://www.youtube.com/@dexsilicium",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Bienvenue sur Linuxtricks",
+      "url": "https://www.linuxtricks.fr/pages/bienvenue-sur-linuxtricks",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    },
+    {
+      "name": "Adrien Linuxtricks",
+      "url": "https://www.youtube.com/@AdrienLinuxtricks",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
+    }
+  ]
+}

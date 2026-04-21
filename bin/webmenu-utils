@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+WEBMENU_CONF_DIR="$HOME/.config/webmenu"
+WEBMENU_DB="$WEBMENU_CONF_DIR/webmenu.json"
+WEBMENU_CONFIG="$WEBMENU_CONF_DIR/config.json"
+WEBMENU_TEMPLATES="$WEBMENU_CONF_DIR/templates"
+WEBMENU_ICONS="$WEBMENU_CONF_DIR/share/icons"
+WEBMENU_DESKTOP_DIR="$HOME/.local/share/applications/web-links"
+
+mkdir -p "$WEBMENU_DESKTOP_DIR" "$WEBMENU_ICONS"
+
+require_deps() {
+    for cmd in jq zenity; do
+        command -v "$cmd" >/dev/null 2>&1 || {
+            echo "Dépendance manquante : $cmd"
+            exit 1
+        }
+    done
+}
+
+load_config() {
+    DEFAULT_BROWSER=$(jq -r '.default_browser' "$WEBMENU_CONFIG")
+    TEMPLATE_FILE=$(jq -r '.template' "$WEBMENU_CONFIG")
+    ICON_REFRESH_DAYS=$(jq -r '.icon_refresh_days' "$WEBMENU_CONFIG")
+    TEMPLATE_FILE="${TEMPLATE_FILE/#\~/$HOME}"
+}
+
+# --- TRI UNIQUE ET CORRECT ---
+get_entries() {
+    jq -c '.entries | sort_by(.name)[]' "$WEBMENU_DB"
+}
+
+get_entry_by_name() {
+    local name="$1"
+    jq -c --arg n "$name" '.entries[] | select(.name == $n)' "$WEBMENU_DB"
+}
+
+add_entry_json() {
+    local name="$1" url="$2" browser="$3" icon="$4" category="$5" tags="$6"
+    local tmp
+    tmp=$(mktemp)
+
+    jq --arg name "$name" \
+       --arg url "$url" \
+       --arg browser "$browser" \
+       --arg icon "$icon" \
+       --arg category "$category" \
+       --arg tags "$tags" \
+       '
+       .entries += [{
+          name: $name,
+          url: $url,
+          browser: $browser,
+          icon: $icon,
+          category: $category,
+          tags: ( $tags | split(",") | map(select(. != "")) )
+       }]
+       | .entries |= sort_by(.name)
+       ' "$WEBMENU_DB" > "$tmp"
+
+    mv "$tmp" "$WEBMENU_DB"
+}
+
+remove_entry_json() {
+    local name="$1" tmp
+    tmp=$(mktemp)
+
+    jq --arg n "$name" '
+        .entries |= map(select(.name != $n)) | sort_by(.name)
+    ' "$WEBMENU_DB" > "$tmp"
+
+    mv "$tmp" "$WEBMENU_DB"
+}
+
+slugify_name() {
+    echo "$1" | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
+}
+
+download_icon() {
+    local url="$1"
+    local domain icon_file
+    domain=$(echo "$url" | sed -E 's~https?://([^/]+).*~\1~')
+    icon_file="$WEBMENU_ICONS/$domain.png"
+
+    if [ -f "$icon_file" ]; then
+        echo "$icon_file"
+        return
+    fi
+
+    if wget -q "https://www.google.com/s2/favicons?domain=$domain&sz=64" -O "$icon_file"; then
+        echo "$icon_file"
+    else
+        rm -f "$icon_file"
+        echo "/usr/share/icons/hicolor/64x64/apps/web-browser.png"
+    fi
+}
+
+build_exec_command() {
+    local browser="$1" url="$2"
+    case "$browser" in
+        firefox) echo "firefox --new-window \"$url\"" ;;
+        firefox-ssb) echo "firefox --ssb \"$url\"" ;;
+        chromium) echo "chromium --app=\"$url\"" ;;
+        chrome) echo "google-chrome --app=\"$url\"" ;;
+        brave) echo "brave --app=\"$url\"" ;;
+        edge) echo "microsoft-edge --app=\"$url\"" ;;
+        xdg-open|*) echo "xdg-open \"$url\"" ;;
+    esac
+}
+
+generate_desktop_file() {
+    local name="$1" url="$2" browser="$3" icon_mode="$4" category="$5"
+    local slug file icon_path exec_cmd content
+
+    mkdir -p "$WEBMENU_DESKTOP_DIR"
+
+    slug=$(slugify_name "$name")
+    file="$WEBMENU_DESKTOP_DIR/$slug.desktop"
+
+    if [ "$icon_mode" = "auto" ]; then
+        icon_path=$(download_icon "$url")
+    else
+        icon_path="$icon_mode"
+    fi
+
+    exec_cmd=$(build_exec_command "$browser" "$url")
+
+    content=$(sed \
+        -e "s|{{NAME}}|$name|g" \
+        -e "s|{{EXEC}}|$exec_cmd|g" \
+        -e "s|{{ICON}}|$icon_path|g" \
+        -e "s|{{CATEGORY}}|$category|g" \
+        "$TEMPLATE_FILE")
+
+    echo "$content" > "$file"
+}
+
+remove_desktop_file() {
+    local name="$1" slug file
+    slug=$(slugify_name "$name")
+    file="$WEBMENU_DESKTOP_DIR/$slug.desktop"
+    [ -f "$file" ] && rm "$file"
+}
+
+refresh_cinnamon() {
+    update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+    cinnamon --replace >/dev/null 2>&1 &
+}
+
