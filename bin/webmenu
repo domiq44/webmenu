@@ -18,8 +18,6 @@ Commandes :
   webmenu daemon
   webmenu refresh
   webmenu refresh-icons
-  webmenu refresh-icons
-  webmenu refresh-icons
 EOF
 }
 
@@ -55,8 +53,7 @@ case "$cmd" in
             generate_desktop_file "$name" "$url" "$browser" "auto" "$category"
         done
         refresh_cinnamon
-        ;;
-        ;;
+    ;;
 
     remove)
         name="$1"
@@ -66,23 +63,10 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
-    refresh-icons)
-        rm -f "$WEBMENU_ICONS"/*.png
-        get_entries | while read -r entry; do
-            name=$(echo "$entry" | jq -r '.name')
-            url=$(echo "$entry" | jq -r '.url')
-            browser=$(echo "$entry" | jq -r '.browser')
-            category=$(echo "$entry" | jq -r '.category')
-            generate_desktop_file "$name" "$url" "$browser" "auto" "$category"
-        done
-        refresh_cinnamon
-        ;;
-        ;;
-
     list)
         get_entries \
             | jq -r '.name + " -> " + .url'
-        ;;
+    ;;
 
     sync)
         rm -f "$WEBMENU_DESKTOP_DIR"/*.desktop 2>/dev/null || true
@@ -99,46 +83,20 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
-    refresh-icons)
-        rm -f "$WEBMENU_ICONS"/*.png
-        get_entries | while read -r entry; do
-            name=$(echo "$entry" | jq -r '.name')
-            url=$(echo "$entry" | jq -r '.url')
-            browser=$(echo "$entry" | jq -r '.browser')
-            category=$(echo "$entry" | jq -r '.category')
-            generate_desktop_file "$name" "$url" "$browser" "auto" "$category"
-        done
-        refresh_cinnamon
-        ;;
-        ;;
-
     gui)
         "$HOME/bin/webmenu-gui"
-        ;;
+    ;;
 
     daemon)
         "$HOME/bin/webmenu-daemon"
-        ;;
+    ;;
 
     refresh)
         refresh_cinnamon
     ;;
 
-    refresh-icons)
-        rm -f "$WEBMENU_ICONS"/*.png
-        get_entries | while read -r entry; do
-            name=$(echo "$entry" | jq -r '.name')
-            url=$(echo "$entry" | jq -r '.url')
-            browser=$(echo "$entry" | jq -r '.browser')
-            category=$(echo "$entry" | jq -r '.category')
-            generate_desktop_file "$name" "$url" "$browser" "auto" "$category"
-        done
-        refresh_cinnamon
-        ;;
-        ;;
-
     *)
         usage
-        ;;
+    ;;
 esac
 
