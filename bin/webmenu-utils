@@ -78,36 +78,57 @@ slugify_name() {
     echo "$1" | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
 }
 
-###############################################
-#  download_icon() — version corrigée YouTube  #
-###############################################
 download_icon() {
     local url="$1"
     local domain icon_file
     domain=$(echo "$url" | sed -E 's~https?://([^/]+).*~\1~')
     icon_file="$WEBMENU_ICONS/$domain.png"
 
-    # Si déjà téléchargé → on réutilise
+    # 1. Cache local
     if [ -f "$icon_file" ]; then
         echo "$icon_file"
         return
     fi
 
-    # --- Cas spécial YouTube ---
-    if [[ "$domain" == "youtube.com" || "$domain" == "www.youtube.com" ]]; then
-        if wget -q "https://favicon.im/youtube.com" -O "$icon_file"; then
-            echo "$icon_file"
-            return
-        fi
-    fi
-
-    # --- Méthode standard pour tous les autres sites ---
+    # 2. Google favicon
     if wget -q "https://www.google.com/s2/favicons?domain=$domain&sz=64" -O "$icon_file"; then
         echo "$icon_file"
+        return
+    fi
+    if file "$icon_file" | grep -qi 'image'; then
+        echo "$icon_file"
+        return
     else
         rm -f "$icon_file"
-        echo "/usr/share/icons/hicolor/64x64/apps/web-browser.png"
     fi
+
+    # 3. Favicon direct du site
+    if wget -q "https://$domain/favicon.ico" -O "$icon_file"; then
+        echo "$icon_file"
+        return
+    fi
+    if file "$icon_file" | grep -qi 'image'; then
+        echo "$icon_file"
+        return
+    else
+        rm -f "$icon_file"
+    fi
+
+    # 4. Fallback favicon.im
+    if wget -q "https://favicon.im/$domain" -O "$icon_file"; then
+        echo "$icon_file"
+        return
+    fi
+    if file "$icon_file" | grep -qi 'image'; then
+        echo "$icon_file"
+        return
+    else
+        rm -f "$icon_file"
+    fi
+
+    # 5. Icône système par défaut
+    rm -f "$icon_file"
+    echo "/usr/share/icons/hicolor/64x64/apps/web-browser.png"
 }
 
 build_exec_command() {
