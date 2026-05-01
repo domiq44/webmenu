@@ -2,6 +2,10 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+###############################################
+#                CONSTANTES                   #
+###############################################
+
 WEBMENU_CONF_DIR="$HOME/.config/webmenu"
 WEBMENU_DB="$WEBMENU_CONF_DIR/webmenu.json"
 WEBMENU_CONFIG="$WEBMENU_CONF_DIR/config.json"
@@ -11,14 +15,22 @@ WEBMENU_DESKTOP_DIR="$HOME/.local/share/applications/web-links"
 
 mkdir -p "$WEBMENU_DESKTOP_DIR" "$WEBMENU_ICONS"
 
+###############################################
+#              DÉPENDANCES                    #
+###############################################
+
 require_deps() {
-    for cmd in jq zenity wget; do
+    for cmd in jq zenity wget file; do
         command -v "$cmd" >/dev/null 2>&1 || {
             echo "Dépendance manquante : $cmd"
             exit 1
         }
     done
 }
+
+###############################################
+#              CHARGEMENT CONFIG              #
+###############################################
 
 load_config() {
     DEFAULT_BROWSER=$(jq -r '.default_browser // "firefox"' "$WEBMENU_CONFIG")
@@ -27,7 +39,19 @@ load_config() {
     TEMPLATE_FILE="${TEMPLATE_FILE/#\~/$HOME}"
 }
 
-# --- TRI UNIQUE ET CORRECT ---
+###############################################
+#              JSON UTILITAIRES               #
+###############################################
+
+apply_json_patch() {
+    local jq_filter="$1"
+    local tmp
+    tmp=$(mktemp)
+
+    jq "$jq_filter" "$WEBMENU_DB" > "$tmp"
+    mv "$tmp" "$WEBMENU_DB"
+}
+
 get_entries() {
     jq -c '.entries | sort_by(.name)[]' "$WEBMENU_DB"
 }
@@ -39,97 +63,115 @@ get_entry_by_name() {
 
 add_entry_json() {
     local name="$1" url="$2" browser="$3" icon="$4" category="$5" tags="$6"
-    local tmp
-    tmp=$(mktemp)
 
-    jq --arg name "$name" \
-       --arg url "$url" \
-       --arg browser "$browser" \
-       --arg icon "$icon" \
-       --arg category "$category" \
-       --arg tags "$tags" \
-       '
-       .entries += [{
-          name: $name,
-          url: $url,
-          browser: $browser,
-          icon: $icon,
-          category: $category,
-          tags: ( $tags | split(",") | map(select(. != "")) )
-       }]
-       | .entries |= sort_by(.name)
-       ' "$WEBMENU_DB" > "$tmp"
-
-    mv "$tmp" "$WEBMENU_DB"
+    apply_json_patch "
+        .entries += [{
+            name: \"$name\",
+            url: \"$url\",
+            browser: \"$browser\",
+            icon: \"$icon\",
+            category: \"$category\",
+            tags: (\"$tags\" | split(\",\") | map(select(. != \"\")))
+        }]
+        | .entries |= sort_by(.name)
+    "
 }
 
 remove_entry_json() {
-    local name="$1" tmp
-    tmp=$(mktemp)
+    local name="$1"
 
-    jq --arg n "$name" '
-        .entries |= map(select(.name != $n)) | sort_by(.name)
-    ' "$WEBMENU_DB" > "$tmp"
-
-    mv "$tmp" "$WEBMENU_DB"
+    apply_json_patch "
+        .entries |= map(select(.name != \"$name\")) | sort_by(.name)
+    "
 }
 
-slugify_name() {
-    echo "$1" | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
+###############################################
+#              VALIDATIONS                    #
+###############################################
+
+fail_if() {
+    local condition="$1"
+    local message="$2"
+
+    if eval "$condition"; then
+        echo "Erreur : $message"
+        exit 1
+    fi
+}
+
+validate_url() {
+    local url="$1"
+    fail_if '[[ ! "$url" =~ ^https?:// ]]' "l’URL doit commencer par http:// ou https://"
+    fail_if '! echo "$url" | grep -Eq "^https?://[a-zA-Z0-9._-]+(/.*)?$"' "URL invalide"
+}
+
+validate_name() {
+    local name="$1"
+    fail_if '[ -z "$name" ]' "le nom ne peut pas être vide"
+    fail_if '[[ "$name" =~ [/:*?\"<>|] ]]' "le nom contient des caractères interdits"
+}
+
+validate_browser() {
+    local browser="$1"
+    case "$browser" in
+        firefox|firefox-ssb|chromium|chrome|brave|edge|xdg-open) return 0 ;;
+        *) echo "Erreur : navigateur inconnu : $browser"; exit 1 ;;
+    esac
+}
+
+validate_tags() {
+    local tags="$1"
+    fail_if '[[ ! "$tags" =~ ^[a-zA-Z0-9,_-]*$ ]]' "tags invalides"
+}
+
+validate_icon_file() {
+    local icon="$1"
+    [ "$icon" = "auto" ] && return 0
+    fail_if '[ ! -f "$icon" ]' "fichier icône introuvable : $icon"
+    fail_if '! file "$icon" | grep -qi image' "le fichier n’est pas une image"
+}
+
+###############################################
+#              ICÔNES                         #
+###############################################
+
+try_download_icon() {
+    local url="$1"
+    local dest="$2"
+
+    if wget -q "$url" -O "$dest"; then
+        if file "$dest" | grep -qi 'image'; then
+            echo "$dest"
+            return 0
+        fi
+    fi
+
+    rm -f "$dest"
+    return 1
 }
 
 download_icon() {
     local url="$1"
     local domain icon_file
+
     domain=$(echo "$url" | sed -E 's~https?://([^/]+).*~\1~')
     icon_file="$WEBMENU_ICONS/$domain.png"
 
-    # 1. Cache local
-    if [ -f "$icon_file" ]; then
-        echo "$icon_file"
-        return
-    fi
+    # Cache local
+    [ -f "$icon_file" ] && { echo "$icon_file"; return; }
 
-    # 2. Google favicon
-    if wget -q "https://www.google.com/s2/favicons?domain=$domain&sz=64" -O "$icon_file"; then
-        echo "$icon_file"
-        return
-    fi
-    if file "$icon_file" | grep -qi 'image'; then
-        echo "$icon_file"
-        return
-    else
-        rm -f "$icon_file"
-    fi
+    # Essais successifs
+    try_download_icon "https://www.google.com/s2/favicons?domain=$domain&sz=64" "$icon_file" && return
+    try_download_icon "https://$domain/favicon.ico" "$icon_file" && return
+    try_download_icon "https://favicon.im/$domain" "$icon_file" && return
 
-    # 3. Favicon direct du site
-    if wget -q "https://$domain/favicon.ico" -O "$icon_file"; then
-        echo "$icon_file"
-        return
-    fi
-    if file "$icon_file" | grep -qi 'image'; then
-        echo "$icon_file"
-        return
-    else
-        rm -f "$icon_file"
-    fi
-
-    # 4. Fallback favicon.im
-    if wget -q "https://favicon.im/$domain" -O "$icon_file"; then
-        echo "$icon_file"
-        return
-    fi
-    if file "$icon_file" | grep -qi 'image'; then
-        echo "$icon_file"
-        return
-    else
-        rm -f "$icon_file"
-    fi
-
-    # 5. Icône système par défaut
-    rm -f "$icon_file"
+    # Icône par défaut
     echo "/usr/share/icons/hicolor/64x64/apps/web-browser.png"
 }
+
+###############################################
+#              COMMANDES EXEC                 #
+###############################################
 
 build_exec_command() {
     local browser="$1" url="$2"
@@ -144,112 +186,66 @@ build_exec_command() {
     esac
 }
 
+###############################################
+#              TEMPLATES                      #
+###############################################
+
+apply_template() {
+    local template="$1"
+    shift
+    local content="$template"
+
+    while [ $# -gt 0 ]; do
+        local key="$1"
+        local value="$2"
+        content=$(echo "$content" | sed "s|{{$key}}|$value|g")
+        shift 2
+    done
+
+    echo "$content"
+}
+
+###############################################
+#              FICHIERS DESKTOP               #
+###############################################
+
+slugify_name() {
+    echo "$1" | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
+}
+
 generate_desktop_file() {
     local name="$1" url="$2" browser="$3" icon_mode="$4" category="$5"
-    local slug file icon_path exec_cmd content
-
-    mkdir -p "$WEBMENU_DESKTOP_DIR"
+    local slug file icon_path exec_cmd template
 
     slug=$(slugify_name "$name")
     file="$WEBMENU_DESKTOP_DIR/$slug.desktop"
 
-    if [ "$icon_mode" = "auto" ]; then
-        icon_path=$(download_icon "$url")
-    else
-        icon_path="$icon_mode"
-    fi
-
+    icon_path=$([ "$icon_mode" = "auto" ] && download_icon "$url" || echo "$icon_mode")
     exec_cmd=$(build_exec_command "$browser" "$url")
+    template=$(cat "$TEMPLATE_FILE")
 
-    content=$(sed \
-        -e "s|{{NAME}}|$name|g" \
-        -e "s|{{EXEC}}|$exec_cmd|g" \
-        -e "s|{{ICON}}|$icon_path|g" \
-        -e "s|{{CATEGORY}}|$category|g" \
-        "$TEMPLATE_FILE")
-
-    echo "$content" > "$file"
+    apply_template "$template" \
+        NAME "$name" \
+        EXEC "$exec_cmd" \
+        ICON "$icon_path" \
+        CATEGORY "$category" \
+        > "$file"
 }
 
 remove_desktop_file() {
-    local name="$1" slug file
+    local name="$1"
+    local slug file
     slug=$(slugify_name "$name")
     file="$WEBMENU_DESKTOP_DIR/$slug.desktop"
     [ -f "$file" ] && rm "$file"
 }
+
+###############################################
+#              REFRESH CINNAMON               #
+###############################################
 
 refresh_cinnamon() {
     update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
     cinnamon --replace >/dev/null 2>&1 &
 }
 
-validate_url() {
-    local url="$1"
-
-    # Vérifie le schéma
-    if [[ ! "$url" =~ ^https?:// ]]; then
-        echo "Erreur : l’URL doit commencer par http:// ou https://"
-        exit 1
-    fi
-
-    # Vérifie la structure générale
-    if ! echo "$url" | grep -Eq '^https?://[a-zA-Z0-9._-]+(/.*)?$'; then
-        echo "Erreur : URL invalide."
-        exit 1
-    fi
-}
-
-validate_name() {
-    local name="$1"
-
-    if [ -z "$name" ]; then
-        echo "Erreur : le nom ne peut pas être vide."
-        exit 1
-    fi
-
-    # Interdit les caractères dangereux
-    if [[ "$name" =~ [/:*?\"<>|] ]]; then
-        echo "Erreur : le nom contient des caractères interdits."
-        exit 1
-    fi
-}
-
-validate_browser() {
-    local browser="$1"
-    case "$browser" in
-        firefox|firefox-ssb|chromium|chrome|brave|edge|xdg-open)
-            return 0
-        ;;
-        *)
-            echo "Erreur : navigateur inconnu : $browser"
-            exit 1
-        ;;
-    esac
-}
-
-validate_tags() {
-    local tags="$1"
-
-    # Autorise lettres, chiffres, tirets, underscores, virgules
-    if [[ ! "$tags" =~ ^[a-zA-Z0-9,_-]*$ ]]; then
-        echo "Erreur : tags invalides."
-        exit 1
-    fi
-}
-
-validate_icon_file() {
-    local icon="$1"
-
-    [ "$icon" = "auto" ] && return 0
-
-    if [ ! -f "$icon" ]; then
-        echo "Erreur : fichier icône introuvable : $icon"
-        exit 1
-    fi
-
-    # Vérifie que c’est une image
-    if ! file "$icon" | grep -qi 'image'; then
-        echo "Erreur : le fichier n’est pas une image."
-        exit 1
-    fi
-}
