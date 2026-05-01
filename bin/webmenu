@@ -92,6 +92,47 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
+    purge)
+        echo "⚠️  Cette opération va supprimer WebMenu et toutes les entrées qu'il a créées."
+        read -p "Voulez-vous continuer ? (o/N) : " confirm
+
+        if [ "$confirm" != "o" ]; then
+            echo "Annulé."
+            exit 0
+        fi
+
+        echo "🧹 Suppression des fichiers .desktop créés par WebMenu..."
+        get_entries | while read -r entry; do
+            name=$(echo "$entry" | jq -r '.name')
+            slug=$(echo "$name" | tr ' ' '_' | tr '[:upper:]' '[:lower:]')
+            file="$WEBMENU_DESKTOP_DIR/$slug.desktop"
+            [ -f "$file" ] && rm "$file"
+        done
+
+        echo "🧹 Suppression des icônes WebMenu..."
+        get_entries | while read -r entry; do
+            url=$(echo "$entry" | jq -r '.url')
+            domain=$(echo "$url" | sed -E 's~https?://([^/]+).*~\1~')
+            icon="$WEBMENU_ICONS/$domain.png"
+            [ -f "$icon" ] && rm "$icon"
+        done
+
+        echo "🧹 Suppression de la configuration WebMenu..."
+        rm -rf "$WEBMENU_CONF_DIR"
+
+        echo "🧹 Suppression des exécutables WebMenu..."
+        rm -f "$HOME/.local/bin/webmenu" \
+              "$HOME/.local/bin/webmenu-gui" \
+              "$HOME/.local/bin/webmenu-daemon" \
+              "$HOME/.local/bin/webmenu-utils"
+
+        echo "🔄 Rafraîchissement du menu..."
+        update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
+
+        echo "✅ WebMenu a été entièrement supprimé sans toucher aux autres applications."
+        exit 0
+    ;;
+
     gui)
         "$HOME/.local/bin/webmenu-gui"
     ;;
