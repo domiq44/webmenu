@@ -1,23 +1,25 @@
 # 🌐 WebMenu  
-**Gérez vos sites web comme des applications natives sous Linux**
+**Transformez vos sites web en applications natives sous Linux**
 
-WebMenu est un outil léger, rapide et personnalisable permettant de créer des raccourcis vers des sites web directement dans le menu des applications Linux.  
-Chaque site devient une “web‑app” avec son icône, son navigateur dédié, ses tags et sa catégorie.
+WebMenu est un outil léger, rapide et personnalisable permettant de créer des web‑apps directement intégrées dans le menu des applications Linux.  
+Chaque site devient une application avec son icône, son navigateur dédié, ses tags et son propre lanceur.
 
-Compatible avec Cinnamon, GNOME, KDE et la plupart des environnements de bureau.
+Compatible avec **Cinnamon**, **GNOME**, **KDE** et la plupart des environnements Freedesktop.
 
 ---
 
 # ✨ Fonctionnalités
 
-- **CLI complète** : ajouter, supprimer, lister, synchroniser.
-- **Interface graphique (Zenity)** simple et efficace.
+- **CLI complète** : ajouter, supprimer, lister, synchroniser, rafraîchir.
+- **Interface graphique (Zenity)** simple et intuitive.
+- **Menu dédié “Web”** automatiquement créé dans le menu des applications.
 - **Navigateurs supportés** : Firefox, Firefox SSB, Chromium, Chrome, Brave, Edge, xdg-open.
-- **Icônes automatiques** : récupération intelligente via plusieurs sources (Google, favicon.ico, favicon.im).
+- **Icônes automatiques** : récupération intelligente via Google, favicon.ico, favicon.im.
 - **Daemon de synchronisation** : mise à jour automatique des fichiers `.desktop`.
-- **Templates personnalisables** : modifiez le rendu des entrées.
-- **Tags et catégories** pour organiser vos webapps.
-- **Configuration JSON** claire et modifiable.
+- **Templates personnalisables** pour contrôler le rendu final.
+- **Tags et métadonnées** pour organiser vos webapps.
+- **Configuration JSON** simple et modifiable.
+- **Commande `purge`** pour désinstaller proprement WebMenu.
 
 ---
 
@@ -25,30 +27,32 @@ Compatible avec Cinnamon, GNOME, KDE et la plupart des environnements de bureau.
 
 ## Prérequis
 
-Installez les dépendances nécessaires (exemple pour Fedora) :
+Installez les dépendances nécessaires (exemple Fedora) :
 
 ```bash
 sudo dnf install jq zenity wget inotify-tools file
 ```
 
-- **jq** : manipulation JSON  
-- **zenity** : interface graphique  
-- **wget** : téléchargement des icônes  
-- **inotify-tools** : surveillance de fichiers  
-- **file** : vérification des types MIME  
+- `jq` : manipulation JSON  
+- `zenity` : interface graphique  
+- `wget` : téléchargement des icônes  
+- `inotify-tools` : surveillance du fichier JSON  
+- `file` : détection du type MIME  
 
 ## Installation
 
 1. Clonez le projet :
-   ```bash
-   git clone https://github.com/domiq44/webmenu
-   cd webmenu
-   ```
+
+```bash
+git clone https://github.com/domiq44/webmenu
+cd webmenu
+```
 
 2. Lancez l’installation :
-   ```bash
-   ./install.sh
-   ```
+
+```bash
+./install.sh
+```
 
 Le script installe automatiquement :
 
@@ -57,16 +61,18 @@ Le script installe automatiquement :
 - les templates dans `~/.config/webmenu/templates/`
 - les icônes dans `~/.config/webmenu/share/icons/`
 
-3. Assurez-vous que `~/.local/bin` est dans votre `PATH` :
-   ```bash
-   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-   source ~/.bashrc
-   ```
+3. Assurez-vous que `~/.local/bin` est dans votre PATH :
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
 
 4. Vérifiez l’installation :
-   ```bash
-   webmenu list
-   ```
+
+```bash
+webmenu list
+```
 
 ---
 
@@ -77,11 +83,6 @@ Le script installe automatiquement :
 ```bash
 webmenu add "YouTube" "https://youtube.com" --browser firefox --tags "video,media"
 ```
-
-Options :
-
-- `--browser` : navigateur utilisé  
-- `--tags` : tags séparés par des virgules  
 
 ## Supprimer un site
 
@@ -117,6 +118,12 @@ webmenu gui
 
 ```bash
 webmenu daemon
+```
+
+## Désinstaller proprement WebMenu
+
+```bash
+webmenu purge
 ```
 
 ---
@@ -163,7 +170,7 @@ Variables disponibles :
 - `{{NAME}}`
 - `{{EXEC}}`
 - `{{ICON}}`
-- `{{CATEGORY}}`
+- `{{CATEGORY}}` *(remplacé automatiquement par `WebMenu`)*
 
 ---
 
@@ -201,8 +208,8 @@ bash -n bin/webmenu-utils
 - Support GNOME/KDE natif pour le rafraîchissement du menu.
 - Cache d’icônes avec expiration.
 - Tests automatisés (Bats).
-- Support Flatpak/Snap pour les navigateurs.
-- Mode “édition” dans la GUI.
+- Mode édition dans la GUI.
+- Support des sous‑menus (Web / Social / Dev / Media).
 
 ---
 

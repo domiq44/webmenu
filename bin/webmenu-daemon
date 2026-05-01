@@ -2,18 +2,37 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+###############################################
+#              CHARGEMENT UTILS               #
+###############################################
+
+# Charge les fonctions utilitaires
 . "$HOME/.local/bin/webmenu-utils"
 
+# Vérifie les dépendances et charge la configuration
 require_deps
 load_config
 
+###############################################
+#          VÉRIFICATION INOTIFYWAIT           #
+###############################################
+
+# inotifywait est indispensable pour surveiller les changements
 command -v inotifywait >/dev/null 2>&1 || {
-    echo "inotifywait manquant (paquet inotify-tools)."
+    echo "Erreur : inotifywait est manquant (paquet inotify-tools)."
     exit 1
 }
 
+###############################################
+#              DÉMON DE SURVEILLANCE          #
+###############################################
+
 echo "WebMenu daemon : surveillance de $WEBMENU_DB"
-while inotifywait -e close_write "$WEBMENU_DB" || true; do
+echo "Ctrl+C pour arrêter."
+
+# Boucle infinie : surveille les modifications du fichier JSON
+while inotifywait -e close_write "$WEBMENU_DB" >/dev/null 2>&1 || true; do
+    # À chaque modification → régénération des .desktop
     "$HOME/.local/bin/webmenu" sync
 done
 

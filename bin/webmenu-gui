@@ -2,10 +2,18 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+###############################################
+#              CHARGEMENT UTILS               #
+###############################################
+
 . "$HOME/.local/bin/webmenu-utils"
 
 require_deps
 load_config
+
+###############################################
+#              MENU PRINCIPAL GUI             #
+###############################################
 
 action=$(zenity --list \
     --title="WebMenu" \
@@ -18,15 +26,25 @@ action=$(zenity --list \
 action="${action:-}"
 [ -z "$action" ] && exit 0
 
+###############################################
+#                ROUTEUR ACTIONS              #
+###############################################
+
 case "$action" in
 
+################################################
+#                  AJOUTER                     #
+################################################
 Ajouter)
+    # Nom du site
     name=$(zenity --entry --title="Nom du site" --text="Nom :")
     [ -z "$name" ] && exit 0
 
+    # URL
     url=$(zenity --entry --title="URL" --text="https://...")
     [ -z "$url" ] && exit 0
 
+    # Navigateur
     browser=$(zenity --list \
         --title="Navigateur" \
         --column="Navigateur" \
@@ -41,6 +59,7 @@ Ajouter)
 
     [ -z "$browser" ] && browser="$DEFAULT_BROWSER"
 
+    # Icône
     icon_choice=$(zenity --list \
         --title="Icône" \
         --column="Mode" \
@@ -55,13 +74,24 @@ Ajouter)
         icon_path="auto"
     fi
 
+    # Tags
     tags=$(zenity --entry --title="Tags" --text="Tags (séparés par des virgules) :" || echo "")
 
+    # Ajout dans la base JSON
     add_entry_json "$name" "$url" "$browser" "$icon_path" "Web" "$tags"
+
+    # Création du menu Web si nécessaire
+    create_webmenu_category
+
+    # Génération du .desktop
     generate_desktop_file "$name" "$url" "$browser" "$icon_path" "Web"
+
     refresh_cinnamon
     ;;
 
+################################################
+#                 SUPPRIMER                    #
+################################################
 Supprimer)
     names=$(get_entries | jq -r '.name')
 
@@ -70,6 +100,7 @@ Supprimer)
         exit 0
     fi
 
+    # Sélection du site à supprimer
     name=$(echo "$names" | zenity --list \
         --title="Supprimer un site" \
         --column="Sites" \
@@ -82,6 +113,9 @@ Supprimer)
     refresh_cinnamon
     ;;
 
+################################################
+#                   LISTER                     #
+################################################
 Lister)
     get_entries \
         | jq -r '.name + " -> " + .url' \

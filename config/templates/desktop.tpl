@@ -3,6 +3,6 @@ Type=Application
 Name={{NAME}}
 Exec={{EXEC}}
 Icon={{ICON}}
-Categories=Network;{{CATEGORY}};
+Categories=WebMenu;
 Terminal=false
 StartupNotify=true

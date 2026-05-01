@@ -2,10 +2,20 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+###############################################
+#              CHARGEMENT UTILS               #
+###############################################
+
+# Charge toutes les fonctions utilitaires
 . "$HOME/.local/bin/webmenu-utils"
 
+# Vérifie les dépendances et charge la configuration
 require_deps
 load_config
+
+###############################################
+#                  USAGE                      #
+###############################################
 
 usage() {
     cat <<EOF
@@ -50,6 +60,10 @@ Exemples :
 EOF
 }
 
+###############################################
+#              PARSING COMMANDE               #
+###############################################
+
 cmd="${1:-}"
 shift || true
 
@@ -59,13 +73,21 @@ if [ -z "$cmd" ]; then
     exit 1
 fi
 
+###############################################
+#                ROUTEUR COMMANDES            #
+###############################################
+
 case "$cmd" in
 
+    ###########################################
+    #                 ADD                     #
+    ###########################################
     add)
         name="${1:-}"
         url="${2:-}"
         shift 2 || true
 
+        # Vérification des arguments
         if [ -z "$name" ] || [ -z "$url" ]; then
             usage
             exit 1
@@ -74,6 +96,7 @@ case "$cmd" in
         browser="$DEFAULT_BROWSER"
         tags=""
 
+        # Parsing des options
         while [ $# -gt 0 ]; do
             case "$1" in
                 --browser) browser="$2"; shift 2 ;;
@@ -82,16 +105,27 @@ case "$cmd" in
             esac
         done
 
+        # Validations
         validate_url "$url"
         validate_name "$name"
         validate_browser "$browser"
         validate_tags "$tags"
 
+        # Ajout dans la base JSON
         add_entry_json "$name" "$url" "$browser" "auto" "Web" "$tags"
+
+        # Création du menu Web si nécessaire
+        create_webmenu_category
+
+        # Génération du .desktop
         generate_desktop_file "$name" "$url" "$browser" "auto" "Web"
+
         refresh_cinnamon
     ;;
 
+    ###########################################
+    #             REFRESH ICONS               #
+    ###########################################
     refresh-icons)
         rm -f "$WEBMENU_ICONS"/*.png 2>/dev/null || true
 
@@ -107,8 +141,12 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
+    ###########################################
+    #                REMOVE                   #
+    ###########################################
     remove)
         name="${1:-}"
+
         if [ -z "$name" ]; then
             usage
             exit 1
@@ -119,13 +157,24 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
+    ###########################################
+    #                 LIST                    #
+    ###########################################
     list)
         get_entries | jq -r '.name + " -> " + .url'
     ;;
 
+    ###########################################
+    #                 SYNC                    #
+    ###########################################
     sync)
+        # Nettoyage des anciens .desktop
         rm -f "$WEBMENU_DESKTOP_DIR"/*.desktop 2>/dev/null || true
 
+        # Assure la présence du menu Web
+        create_webmenu_category
+
+        # Régénération complète
         get_entries | while read -r entry; do
             name=$(echo "$entry" | jq -r '.name')
             url=$(echo "$entry" | jq -r '.url')
@@ -139,6 +188,9 @@ case "$cmd" in
         refresh_cinnamon
     ;;
 
+    ###########################################
+    #                 PURGE                   #
+    ###########################################
     purge)
         echo "⚠️  Cette opération va supprimer WebMenu et toutes les entrées qu'il a créées."
         read -p "Voulez-vous continuer ? (o/N) : " confirm
@@ -180,21 +232,32 @@ case "$cmd" in
         exit 0
     ;;
 
+    ###########################################
+    #                 GUI                     #
+    ###########################################
     gui)
         "$HOME/.local/bin/webmenu-gui"
     ;;
 
+    ###########################################
+    #               DAEMON                    #
+    ###########################################
     daemon)
         "$HOME/.local/bin/webmenu-daemon"
     ;;
 
+    ###########################################
+    #               REFRESH                   #
+    ###########################################
     refresh)
         refresh_cinnamon
     ;;
 
+    ###########################################
+    #               DEFAULT                   #
+    ###########################################
     *)
         usage
         exit 1
     ;;
 esac
-

@@ -6,19 +6,24 @@ IFS=$'\n\t'
 #                CONSTANTES                   #
 ###############################################
 
+# Répertoires de configuration
 WEBMENU_CONF_DIR="$HOME/.config/webmenu"
 WEBMENU_DB="$WEBMENU_CONF_DIR/webmenu.json"
 WEBMENU_CONFIG="$WEBMENU_CONF_DIR/config.json"
 WEBMENU_TEMPLATES="$WEBMENU_CONF_DIR/templates"
 WEBMENU_ICONS="$WEBMENU_CONF_DIR/share/icons"
+
+# Répertoire des fichiers .desktop générés
 WEBMENU_DESKTOP_DIR="$HOME/.local/share/applications/web-links"
 
+# Création des dossiers nécessaires
 mkdir -p "$WEBMENU_DESKTOP_DIR" "$WEBMENU_ICONS"
 
 ###############################################
 #              DÉPENDANCES                    #
 ###############################################
 
+# Vérifie que les outils nécessaires sont installés
 require_deps() {
     for cmd in jq zenity wget file; do
         command -v "$cmd" >/dev/null 2>&1 || {
@@ -32,10 +37,13 @@ require_deps() {
 #              CHARGEMENT CONFIG              #
 ###############################################
 
+# Charge config.json et applique les valeurs par défaut
 load_config() {
     DEFAULT_BROWSER=$(jq -r '.default_browser // "firefox"' "$WEBMENU_CONFIG")
     TEMPLATE_FILE=$(jq -r '.template // "~/.config/webmenu/templates/default.tpl"' "$WEBMENU_CONFIG")
     ICON_REFRESH_DAYS=$(jq -r '.icon_refresh_days // 7' "$WEBMENU_CONFIG")
+
+    # Expansion du ~
     TEMPLATE_FILE="${TEMPLATE_FILE/#\~/$HOME}"
 }
 
@@ -43,6 +51,7 @@ load_config() {
 #              JSON UTILITAIRES               #
 ###############################################
 
+# Applique un patch jq au fichier JSON
 apply_json_patch() {
     local jq_filter="$1"
     local tmp
@@ -52,15 +61,18 @@ apply_json_patch() {
     mv "$tmp" "$WEBMENU_DB"
 }
 
+# Retourne toutes les entrées triées
 get_entries() {
     jq -c '.entries | sort_by(.name)[]' "$WEBMENU_DB"
 }
 
+# Retourne une entrée par nom
 get_entry_by_name() {
     local name="$1"
     jq -c --arg n "$name" '.entries[] | select(.name == $n)' "$WEBMENU_DB"
 }
 
+# Ajoute une entrée dans la base JSON
 add_entry_json() {
     local name="$1" url="$2" browser="$3" icon="$4" category="$5" tags="$6"
 
@@ -77,6 +89,7 @@ add_entry_json() {
     "
 }
 
+# Supprime une entrée JSON
 remove_entry_json() {
     local name="$1"
 
@@ -135,6 +148,7 @@ validate_icon_file() {
 #              ICÔNES                         #
 ###############################################
 
+# Télécharge une icône si possible
 try_download_icon() {
     local url="$1"
     local dest="$2"
@@ -150,6 +164,7 @@ try_download_icon() {
     return 1
 }
 
+# Télécharge l’icône d’un site (Google → favicon → fallback)
 download_icon() {
     local url="$1"
     local domain icon_file
@@ -173,6 +188,7 @@ download_icon() {
 #              COMMANDES EXEC                 #
 ###############################################
 
+# Construit la commande d’exécution selon le navigateur
 build_exec_command() {
     local browser="$1" url="$2"
     case "$browser" in
@@ -190,6 +206,7 @@ build_exec_command() {
 #              TEMPLATES                      #
 ###############################################
 
+# Remplace les variables {{KEY}} dans un template
 apply_template() {
     local template="$1"
     shift
@@ -213,6 +230,7 @@ slugify_name() {
     echo "$1" | tr ' ' '_' | tr '[:upper:]' '[:lower:]'
 }
 
+# Génère un fichier .desktop complet
 generate_desktop_file() {
     local name="$1" url="$2" browser="$3" icon_mode="$4" category="$5"
     local slug file icon_path exec_cmd template
@@ -228,10 +246,11 @@ generate_desktop_file() {
         NAME "$name" \
         EXEC "$exec_cmd" \
         ICON "$icon_path" \
-        CATEGORY "$category" \
+        CATEGORY "WebMenu" \
         > "$file"
 }
 
+# Supprime un fichier .desktop
 remove_desktop_file() {
     local name="$1"
     local slug file
@@ -247,5 +266,41 @@ remove_desktop_file() {
 refresh_cinnamon() {
     update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
     cinnamon --replace >/dev/null 2>&1 &
+}
+
+###############################################
+#         CRÉATION DU MENU "WEB"              #
+###############################################
+
+# Crée le menu dédié "Web" dans Cinnamon/GNOME/KDE
+create_webmenu_category() {
+    local dir1="$HOME/.local/share/desktop-directories"
+    local dir2="$HOME/.config/menus/applications-merged"
+
+    mkdir -p "$dir1" "$dir2"
+
+    # Fichier .directory (nom + icône)
+    cat > "$dir1/webmenu.directory" <<EOF
+[Desktop Entry]
+Name=Web
+Icon=applications-internet
+Type=Directory
+EOF
+
+    # Fichier .menu (déclare la catégorie WebMenu)
+    cat > "$dir2/webmenu.menu" <<EOF
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+ "http://www.freedesktop.org/standards/menu-spec/1.0/menu.dtd">
+<Menu>
+    <Name>Applications</Name>
+    <Menu>
+        <Name>Web</Name>
+        <Directory>webmenu.directory</Directory>
+        <Include>
+            <Category>WebMenu</Category>
+        </Include>
+    </Menu>
+</Menu>
+EOF
 }
 
