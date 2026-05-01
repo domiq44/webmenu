@@ -41,6 +41,12 @@ case "$cmd" in
             esac
         done
 
+        validate_url "$url"
+        validate_name "$name"
+        validate_browser "$browser"
+        validate_tags "$tags"
+        validate_icon_file "$icon_path"
+
         add_entry_json "$name" "$url" "$browser" "auto" "Web" "$tags"
         generate_desktop_file "$name" "$url" "$browser" "auto" "Web"
         refresh_cinnamon
