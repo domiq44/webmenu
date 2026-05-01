@@ -75,7 +75,7 @@ Le script installe automatiquement :
 ## Ajouter un site
 
 ```bash
-webmenu add "YouTube" "https://youtube.com" --browser firefox-ssb --tags "video,media"
+webmenu add "YouTube" "https://youtube.com" --browser firefox --tags "video,media"
 ```
 
 Options :
