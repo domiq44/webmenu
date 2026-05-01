@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-. "$HOME/bin/webmenu-utils"
+. "$HOME/.local/bin/webmenu-utils"
 
 require_deps
 load_config
 
 usage() {
     cat <<EOF
-WebMenu v3 - CLI
+WebMenu - CLI
 
 Commandes :
   webmenu add "Nom" "URL" [--browser B] [--tags t1,t2]
@@ -84,11 +84,11 @@ case "$cmd" in
     ;;
 
     gui)
-        "$HOME/bin/webmenu-gui"
+        "$HOME/.local/bin/webmenu-gui"
     ;;
 
     daemon)
-        "$HOME/bin/webmenu-daemon"
+        "$HOME/.local/bin/webmenu-daemon"
     ;;
 
     refresh)

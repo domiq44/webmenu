@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. "$HOME/bin/webmenu-utils"
+. "$HOME/.local/bin/webmenu-utils"
 
 require_deps
 load_config
@@ -27,8 +27,8 @@ Ajouter)
     browser=$(zenity --list \
         --title="Navigateur" \
         --column="Navigateur" \
-        "firefox-ssb" \
         "firefox" \
+        "firefox-ssb" \
         "chromium" \
         "chrome" \
         "brave" \

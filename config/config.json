@@ -1,5 +1,5 @@
 {
-  "default_browser": "firefox-ssb",
+  "default_browser": "firefox",
   "icon_refresh_days": 7,
   "template": "~/.config/webmenu/templates/desktop.tpl"
 }

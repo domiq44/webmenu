@@ -46,25 +46,25 @@ Pour le rafraîchissement du menu d'applications :
 
    Le script `install.sh` effectue automatiquement les tâches suivantes :
    - Détecte le dossier source du projet.
-   - Crée les répertoires nécessaires (`~/bin`, `~/.config/webmenu`, `~/.config/webmenu/templates`, `~/.config/webmenu/share/icons`).
-   - Copie les scripts exécutables depuis `bin/` vers `~/bin`.
+   - Crée les répertoires nécessaires (`~/.local/bin`, `~/.config/webmenu`, `~/.config/webmenu/templates`, `~/.config/webmenu/share/icons`).
+   - Copie les scripts exécutables depuis `bin/` vers `~/.local/bin`.
    - Copie les fichiers de configuration depuis `config/` vers `~/.config/webmenu`.
-   - Rend les scripts dans `~/bin` exécutables (chmod +x).
-   - Affiche un message de confirmation et un rappel pour ajouter `~/bin` au PATH.
-   - Scripts : `~/bin/`
+   - Rend les scripts dans `~/.local/bin` exécutables (chmod +x).
+   - Affiche un message de confirmation et un rappel pour ajouter `~/.local/bin` au PATH.
+   - Scripts : `~/.local/bin/`
    - Configuration : `~/.config/webmenu/`
    - Icônes : `~/.config/webmenu/share/icons/`
 
    Le script `install.sh` effectue automatiquement les tâches suivantes :
    - Détecte le dossier source du projet.
-   - Crée les répertoires nécessaires (`~/bin`, `~/.config/webmenu`, `~/.config/webmenu/templates`, `~/.config/webmenu/share/icons`).
-   - Copie les scripts exécutables depuis `bin/` vers `~/bin`.
+   - Crée les répertoires nécessaires (`~/.local/bin`, `~/.config/webmenu`, `~/.config/webmenu/templates`, `~/.config/webmenu/share/icons`).
+   - Copie les scripts exécutables depuis `bin/` vers `~/.local/bin`.
    - Copie les fichiers de configuration depuis `config/` vers `~/.config/webmenu`.
-   - Rend les scripts dans `~/bin` exécutables (chmod +x).
-   - Affiche un message de confirmation et un rappel pour ajouter `~/bin` au PATH.
+   - Rend les scripts dans `~/.local/bin` exécutables (chmod +x).
+   - Affiche un message de confirmation et un rappel pour ajouter `~/.local/bin` au PATH.
 
-4. Assurez-vous que `~/bin` est dans votre `PATH` :
-   - Ajoutez `export PATH="$HOME/bin:$PATH"` à votre `~/.bashrc` ou `~/.zshrc`, puis rechargez :
+4. Assurez-vous que `~/.local/bin` est dans votre `PATH` :
+   - Ajoutez `export PATH="$HOME/.local/bin:$PATH"` à votre `~/.bashrc` ou `~/.zshrc`, puis rechargez :
      ```bash
      source ~/.bashrc
      ```
@@ -158,7 +158,7 @@ Les fichiers de configuration se trouvent dans `~/.config/webmenu/` :
 - **`config.json`** : Paramètres globaux.
   ```json
   {
-    "default_browser": "firefox-ssb",
+    "default_browser": "firefox",
     "icon_refresh_days": 7,
     "template": "~/.config/webmenu/templates/desktop.tpl"
   }
@@ -220,7 +220,7 @@ En plus des prérequis utilisateur, installez :
 3. Modifiez les scripts (respectez le style : fonctions modulaires, commentaires en français).
 4. Testez :
    - Syntaxe Bash : `bash -n script.sh`
-   - Fonctionnalités : Relancez `./install.sh` pour copier les modifications dans `~/bin`, puis testez les commandes.
+   - Fonctionnalités : Relancez `./install.sh` pour copier les modifications dans `~/.local/bin`, puis testez les commandes.
 5. Soumettez une pull request.
 
 ### Maintenance
@@ -253,3 +253,4 @@ Pour des questions ou bugs :
 ---
 
 *WebMenu v3 - Gérez vos sites web comme des applications natives.*
+

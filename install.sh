@@ -5,12 +5,12 @@ set -e
 # Détecte automatiquement le dossier du projet
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-BIN_DIR="$HOME/bin"
+BIN_DIR="$HOME/.local/bin"
 CONF_DIR="$HOME/.config/webmenu"
 TEMPLATES_DIR="$CONF_DIR/templates"
 SHARE_DIR="$CONF_DIR/share/icons"
 
-echo "Installation de WebMenu v3..."
+echo "Installation de WebMenu..."
 echo "Dossier source : $BASE_DIR"
 
 mkdir -p "$BIN_DIR"
@@ -32,5 +32,5 @@ cp "$BASE_DIR/config/templates/desktop.tpl" "$TEMPLATES_DIR/"
 chmod +x "$BIN_DIR"/webmenu*
 
 echo "Installation terminée."
-echo "Assure-toi que ~/bin est dans ton PATH."
+echo "Assure-toi que ~/.local/bin est dans ton PATH."
 
