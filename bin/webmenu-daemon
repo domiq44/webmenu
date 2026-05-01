@@ -13,7 +13,7 @@ command -v inotifywait >/dev/null 2>&1 || {
 }
 
 echo "WebMenu daemon : surveillance de $WEBMENU_DB"
-while inotifywait -e close_write "$WEBMENU_DB"; do
+while inotifywait -e close_write "$WEBMENU_DB" || true; do
     "$HOME/.local/bin/webmenu" sync
 done
 

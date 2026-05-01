@@ -21,9 +21,9 @@ require_deps() {
 }
 
 load_config() {
-    DEFAULT_BROWSER=$(jq -r '.default_browser' "$WEBMENU_CONFIG")
-    TEMPLATE_FILE=$(jq -r '.template' "$WEBMENU_CONFIG")
-    ICON_REFRESH_DAYS=$(jq -r '.icon_refresh_days' "$WEBMENU_CONFIG")
+    DEFAULT_BROWSER=$(jq -r '.default_browser // "firefox"' "$WEBMENU_CONFIG")
+    TEMPLATE_FILE=$(jq -r '.template // "~/.config/webmenu/templates/default.tpl"' "$WEBMENU_CONFIG")
+    ICON_REFRESH_DAYS=$(jq -r '.icon_refresh_days // 7' "$WEBMENU_CONFIG")
     TEMPLATE_FILE="${TEMPLATE_FILE/#\~/$HOME}"
 }
 

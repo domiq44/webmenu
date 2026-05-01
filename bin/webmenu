@@ -23,7 +23,8 @@ Commandes :
 EOF
 }
 
-cmd="$1"; shift || true
+cmd="${1:-}"; shift || true
+[ -z "$cmd" ] && usage && exit 1
 
 case "$cmd" in
     add)

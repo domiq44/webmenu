@@ -15,6 +15,7 @@ action=$(zenity --list \
     "Lister" \
     --height=250)
 
+action="${action:-}"
 [ -z "$action" ] && exit 0
 
 case "$action" in
