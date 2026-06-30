@@ -119,6 +119,14 @@
       "icon": "auto",
       "category": "Web",
       "tags": []
+    },
+    {
+      "name": "Ancestris Forum",
+      "url": "https://forum.ancestris.org/",
+      "browser": "firefox",
+      "icon": "auto",
+      "category": "Web",
+      "tags": []
     }
   ]
 }
